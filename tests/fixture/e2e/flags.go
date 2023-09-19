@@ -15,6 +15,8 @@ type FlagVars struct {
 	avalancheGoExecPath  string
 	persistentNetworkDir string
 	usePersistentNetwork bool
+	retainSubnets        bool
+	pluginDir            string
 }
 
 func (v *FlagVars) PersistentNetworkDir() string {
@@ -30,6 +32,14 @@ func (v *FlagVars) AvalancheGoExecPath() string {
 
 func (v *FlagVars) UsePersistentNetwork() bool {
 	return v.usePersistentNetwork
+}
+
+func (v *FlagVars) RetainSubnets() bool {
+	return v.retainSubnets
+}
+
+func (v *FlagVars) PluginDir() string {
+	return v.pluginDir
 }
 
 func RegisterFlags() *FlagVars {
@@ -52,6 +62,17 @@ func RegisterFlags() *FlagVars {
 		false,
 		"[optional] whether to target the persistent network identified by --network-dir.",
 	)
-
+	flag.BoolVar(
+		&vars.retainSubnets,
+		"retain-subnets",
+		false,
+		"[optional] whether to retain subnets created by a test.",
+	)
+	flag.StringVar(
+		&vars.pluginDir,
+		"plugin-dir",
+		os.ExpandEnv("$HOME/.avalanchego/plugins"),
+		"[optional] the dir containing VM plugins.",
+	)
 	return &vars
 }

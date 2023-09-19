@@ -27,6 +27,10 @@ go install -v github.com/onsi/ginkgo/v2/ginkgo@v2.1.4
 ACK_GINKGO_RC=true ginkgo build ./tests/e2e
 ./tests/e2e/e2e.test --help
 
+# Enable subnet testing by building xsvm
+./scripts/build_xsvm.sh
+echo ""
+
 #################################
 # Since TESTNETCTL_NETWORK_DIR may be persistently set in the environment (e.g. to configure
 # ginkgo or testnetctl), configuring the use of a persistent network with this script
@@ -60,4 +64,5 @@ fi
 
 #################################
 # - Execute in random order to identify unwanted dependency
-ginkgo -p -v --randomize-all ./tests/e2e/e2e.test -- ${E2E_ARGS} "${@}"
+echo ""
+ginkgo ${GINKGO_ARGS} -v --randomize-all ./tests/e2e/e2e.test -- ${E2E_ARGS} "${@}"

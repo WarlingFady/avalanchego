@@ -24,6 +24,7 @@ import (
 	"github.com/ava-labs/avalanchego/tests"
 	"github.com/ava-labs/avalanchego/tests/fixture/testnet"
 	"github.com/ava-labs/avalanchego/tests/fixture/testnet/local"
+	"github.com/ava-labs/avalanchego/utils/set"
 	"github.com/ava-labs/avalanchego/vms/platformvm/txs/executor"
 	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
 	"github.com/ava-labs/avalanchego/wallet/subnet/primary"
@@ -61,13 +62,18 @@ const (
 	PrivateNetworksDirName = "private_networks"
 )
 
-// Create a new wallet for the provided keychain against the specified node URI.
 func NewWallet(keychain *secp256k1fx.Keychain, nodeURI testnet.NodeURI) primary.Wallet {
+	return NewWalletWithTxIDs(keychain, nodeURI, nil)
+}
+
+// Create a new wallet for the provided keychain against the specified node URI.
+func NewWalletWithTxIDs(keychain *secp256k1fx.Keychain, nodeURI testnet.NodeURI, txIDs []ids.ID) primary.Wallet {
 	tests.Outf("{{blue}} initializing a new wallet for node %s with URI: %s {{/}}\n", nodeURI.NodeID, nodeURI.URI)
 	baseWallet, err := primary.MakeWallet(DefaultContext(), &primary.WalletConfig{
-		URI:          nodeURI.URI,
-		AVAXKeychain: keychain,
-		EthKeychain:  keychain,
+		URI:              nodeURI.URI,
+		AVAXKeychain:     keychain,
+		EthKeychain:      keychain,
+		PChainTxsToFetch: set.Of(txIDs...),
 	})
 	require.NoError(ginkgo.GinkgoT(), err)
 	return primary.NewWalletWithOptions(
@@ -139,14 +145,7 @@ func AddEphemeralNode(network testnet.Network, flags testnet.FlagsMap) testnet.N
 	node, err := network.AddEphemeralNode(ginkgo.GinkgoWriter, flags)
 	require.NoError(err)
 
-	// Ensure node is stopped on teardown. It's configuration is not removed to enable
-	// collection in CI to aid in troubleshooting failures.
-	ginkgo.DeferCleanup(func() {
-		tests.Outf("shutting down ephemeral node %q\n", node.GetID())
-		ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
-		defer cancel()
-		require.NoError(node.Stop(ctx))
-	})
+	RegisterNodeforCleanup(node)
 
 	return node
 }
@@ -236,4 +235,13 @@ func StartLocalNetwork(avalancheGoExecPath string, networkDir string) *local.Loc
 	tests.Outf("{{green}}Successfully started network{{/}}\n")
 
 	return network
+}
+
+func RegisterNodeforCleanup(node testnet.Node) {
+	ginkgo.DeferCleanup(func() {
+		tests.Outf("shutting down ephemeral node %q\n", node.GetID())
+		ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
+		defer cancel()
+		require.NoError(ginkgo.GinkgoT(), node.Stop(ctx))
+	})
 }
