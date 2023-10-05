@@ -242,6 +242,6 @@ func RegisterNodeforCleanup(node testnet.Node) {
 		tests.Outf("shutting down ephemeral node %q\n", node.GetID())
 		ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
 		defer cancel()
-		require.NoError(ginkgo.GinkgoT(), node.Stop(ctx))
+		require.NoError(ginkgo.GinkgoT(), node.Stop(ctx, false /* waitForProcessStopped */))
 	})
 }
