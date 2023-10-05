@@ -878,7 +878,7 @@ func (ln *LocalNetwork) WriteSubnets(subnets []*testnet.Subnet) error {
 	return nil
 }
 
-func (ln *LocalNetwork) RestartSubnets(ctx context.Context, w io.Writer, subnets []*testnet.Subnet) error {
+func (ln *LocalNetwork) RestartSubnets(ctx context.Context, w io.Writer, subnets ...*testnet.Subnet) error {
 	for _, subnet := range subnets {
 		nodes, err := subnet.GetNodes(ln)
 		if err != nil {
