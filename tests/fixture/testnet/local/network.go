@@ -97,6 +97,24 @@ type LocalNetwork struct {
 	Dir string
 }
 
+func NewLocalNetwork(dir string) (*LocalNetwork, error) {
+	// Ensure a real and absolute network dir so that node
+	// configuration that embeds the network path will continue to
+	// work regardless of symlink and working directory changes.
+	absDir, err := filepath.Abs(dir)
+	if err != nil {
+		return nil, err
+	}
+	realDir, err := filepath.EvalSymlinks(absDir)
+	if err != nil {
+		return nil, err
+	}
+
+	return &LocalNetwork{
+		Dir: realDir,
+	}, nil
+}
+
 // Returns the configuration of the network in backend-agnostic form.
 func (ln *LocalNetwork) GetConfig() testnet.NetworkConfig {
 	return ln.NetworkConfig
@@ -208,19 +226,10 @@ func StartNetwork(
 
 // Read a network from the provided directory.
 func ReadNetwork(dir string) (*LocalNetwork, error) {
-	// Ensure a real and absolute network dir so that node
-	// configuration that embeds the network path will continue to
-	// work regardless of symlink and working directory changes.
-	absDir, err := filepath.Abs(dir)
+	network, err := NewLocalNetwork(dir)
 	if err != nil {
 		return nil, err
 	}
-	realDir, err := filepath.EvalSymlinks(absDir)
-	if err != nil {
-		return nil, err
-	}
-
-	network := &LocalNetwork{Dir: realDir}
 	if err := network.ReadAll(); err != nil {
 		return nil, fmt.Errorf("failed to read local network: %w", err)
 	}
