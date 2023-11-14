@@ -22,8 +22,8 @@ import (
 
 	"github.com/ava-labs/avalanchego/ids"
 	"github.com/ava-labs/avalanchego/tests"
-	"github.com/ava-labs/avalanchego/tests/fixture/testnet"
-	"github.com/ava-labs/avalanchego/tests/fixture/testnet/local"
+	"github.com/ava-labs/avalanchego/tests/fixture/ephnet"
+	"github.com/ava-labs/avalanchego/tests/fixture/ephnet/local"
 	"github.com/ava-labs/avalanchego/vms/platformvm/txs/executor"
 	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
 	"github.com/ava-labs/avalanchego/wallet/subnet/primary"
@@ -62,7 +62,7 @@ const (
 )
 
 // Create a new wallet for the provided keychain against the specified node URI.
-func NewWallet(keychain *secp256k1fx.Keychain, nodeURI testnet.NodeURI) primary.Wallet {
+func NewWallet(keychain *secp256k1fx.Keychain, nodeURI ephnet.NodeURI) primary.Wallet {
 	tests.Outf("{{blue}} initializing a new wallet for node %s with URI: %s {{/}}\n", nodeURI.NodeID, nodeURI.URI)
 	baseWallet, err := primary.MakeWallet(DefaultContext(), &primary.WalletConfig{
 		URI:          nodeURI.URI,
@@ -81,7 +81,7 @@ func NewWallet(keychain *secp256k1fx.Keychain, nodeURI testnet.NodeURI) primary.
 }
 
 // Create a new eth client targeting the specified node URI.
-func NewEthClient(nodeURI testnet.NodeURI) ethclient.Client {
+func NewEthClient(nodeURI ephnet.NodeURI) ethclient.Client {
 	tests.Outf("{{blue}} initializing a new eth client for node %s with URI: %s {{/}}\n", nodeURI.NodeID, nodeURI.URI)
 	nodeAddress := strings.Split(nodeURI.URI, "//")[1]
 	uri := fmt.Sprintf("ws://%s/ext/bc/C/ws", nodeAddress)
@@ -128,7 +128,7 @@ func Eventually(condition func() bool, waitFor time.Duration, tick time.Duration
 // Add an ephemeral node that is only intended to be used by a single test. Its ID and
 // URI are not intended to be returned from the Network instance to minimize
 // accessibility from other tests.
-func AddEphemeralNode(network testnet.Network, flags testnet.FlagsMap) testnet.Node {
+func AddEphemeralNode(network ephnet.Network, flags ephnet.FlagsMap) ephnet.Node {
 	require := require.New(ginkgo.GinkgoT())
 
 	node, err := network.AddEphemeralNode(ginkgo.GinkgoWriter, flags)
@@ -145,8 +145,8 @@ func AddEphemeralNode(network testnet.Network, flags testnet.FlagsMap) testnet.N
 }
 
 // Wait for the given node to report healthy.
-func WaitForHealthy(node testnet.Node) {
-	require.NoError(ginkgo.GinkgoT(), testnet.WaitForHealthy(DefaultContext(), node))
+func WaitForHealthy(node ephnet.Node) {
+	require.NoError(ginkgo.GinkgoT(), ephnet.WaitForHealthy(DefaultContext(), node))
 }
 
 // Sends an eth transaction, waits for the transaction receipt to be issued
@@ -194,13 +194,13 @@ func WithSuggestedGasPrice(ethClient ethclient.Client) common.Option {
 }
 
 // Verify that a new node can bootstrap into the network.
-func CheckBootstrapIsPossible(network testnet.Network) {
+func CheckBootstrapIsPossible(network ephnet.Network) {
 	if len(os.Getenv(SkipBootstrapChecksEnvName)) > 0 {
 		tests.Outf("{{yellow}}Skipping bootstrap check due to the %s env var being set", SkipBootstrapChecksEnvName)
 		return
 	}
 	ginkgo.By("checking if bootstrap is possible with the current network state")
-	node := AddEphemeralNode(network, testnet.FlagsMap{})
+	node := AddEphemeralNode(network, ephnet.FlagsMap{})
 	WaitForHealthy(node)
 }
 
@@ -217,8 +217,8 @@ func StartLocalNetwork(avalancheGoExecPath string, networkDir string) *local.Loc
 				ExecPath: avalancheGoExecPath,
 			},
 		},
-		testnet.DefaultNodeCount,
-		testnet.DefaultFundedKeyCount,
+		ephnet.DefaultNodeCount,
+		ephnet.DefaultFundedKeyCount,
 	)
 	require.NoError(err)
 	ginkgo.DeferCleanup(func() {
